@@ -32,11 +32,52 @@ public class BudgetServiceImpl implements BudgetService {
         return SALARY - SAVING - gatAllSpend();
     }
 
-    public void addTransaction(Transaction transaction) {
+    @Override
+    public Long addTransaction(Transaction transaction) {
         Map<Long, Transaction> monthTransactions = transactions.getOrDefault(LocalDate.now().getMonth(), new LinkedHashMap<>());
-        monthTransactions.put(lastId++, transaction);
+        monthTransactions.put(lastId, transaction);
+        transactions.put(LocalDate.now().getMonth(), monthTransactions);
+        return lastId++;
     }
 
+    @Override
+    public Transaction editTransaction(long id, Transaction transaction) {
+        for (Map<Long, Transaction> transactionsByMonth : transactions.values()) {
+            if (transactionsByMonth.containsKey(id)) {
+                transactionsByMonth.put(id, transaction);
+                return transaction;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean deleteTransaction(long id) {
+        for (Map<Long, Transaction> transactionsByMonth : transactions.values()) {
+            if (transactionsByMonth.containsKey(id)) {
+                transactionsByMonth.remove(id);
+                return true;
+            }
+        }
+        return false;
+    }
+    @Override
+    public void deleteAllTransaction() {
+        transactions = new TreeMap<>();
+    }
+
+    @Override
+    public Transaction getTransaction(long id) {
+        for (Map<Long, Transaction> transactionsByMonth : transactions.values()) {
+            Transaction transaction = transactionsByMonth.get(id);
+            if (transaction != null) {
+                return transaction;
+            }
+        }
+        return null;
+    }
+
+    @Override
     public int getDailyBalance() {// сколько денег еще осталось на сегодня
         return DAILY_BUDGET * LocalDate.now().getDayOfMonth() - gatAllSpend();
     }
