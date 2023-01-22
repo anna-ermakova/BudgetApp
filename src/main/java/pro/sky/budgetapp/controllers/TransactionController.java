@@ -1,12 +1,25 @@
 package pro.sky.budgetapp.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import pro.sky.budgetapp.model.Category;
 import pro.sky.budgetapp.model.Transaction;
 import pro.sky.budgetapp.services.BudgetService;
 
+import java.time.Month;
+
 @RestController
 @RequestMapping("/transaction")
+@Tag(name = "Tранзакции.", description = "CRUD-операции и другие эндпоинты для работы с транзакциями.")
 public class TransactionController {
     private final BudgetService budgetService;
 
@@ -50,5 +63,26 @@ public class TransactionController {
     public ResponseEntity<Void> deleteAllTransaction() {
         budgetService.deleteAllTransaction();
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping
+    @Operation(summary = "Поиск транзации по месяцу и/или категории.",
+            description = "Можно искать по одному параметру или обоим, или вообще без парамера.")
+    @Parameters(value = {
+            @Parameter(name = "month", example = "Декабрь.")
+    })
+    @ApiResponses(
+            @ApiResponse( responseCode="200", description = "Транзакции были найдены.",
+            content = {
+                    @Content(
+                            mediaType = "application/json",
+                            array=@ArraySchema(
+                                    schema = @Schema(implementation = Transaction.class)
+                            )
+                    )
+            })
+    )
+    public ResponseEntity<Transaction> getAllTransactions(@RequestParam(required = false) Month month, @RequestParam(required = false) Category category) {
+        return null;
     }
 }

@@ -12,9 +12,9 @@ import java.util.TreeMap;
 
 @Service
 public class BudgetServiceImpl implements BudgetService {
-    public static final int SALARY = 30_000 - 9750;
+    public static final int SALARY = 30_000;
     public static final int SAVING = 3_000;
-    public static final int DAILY_BUDGET = (SAVING - SAVING) / LocalDate.now().lengthOfMonth();
+    public static final int DAILY_BUDGET = (SALARY - SAVING) / LocalDate.now().lengthOfMonth();
     public static int balance = 0;
     private static long lastId = 0;
     public static final int AVG_SALARY = (10000 + 10000 + 10000 + 10000 + 10000 + 10000 + 10000 + 10000 + 15000 + 15000 + 15000 + 20000) / 12;
