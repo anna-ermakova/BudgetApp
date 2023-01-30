@@ -1,8 +1,12 @@
 package pro.sky.budgetapp.services.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import pro.sky.budgetapp.model.Transaction;
 import pro.sky.budgetapp.services.BudgetService;
+import pro.sky.budgetapp.services.FilesService;
 
 import java.time.LocalDate;
 import java.time.Month;
@@ -12,6 +16,8 @@ import java.util.TreeMap;
 
 @Service
 public class BudgetServiceImpl implements BudgetService {
+    final private FilesService filesService;
+
     public static final int SALARY = 30_000;
     public static final int SAVING = 3_000;
     public static final int DAILY_BUDGET = (SALARY - SAVING) / LocalDate.now().lengthOfMonth();
@@ -20,7 +26,11 @@ public class BudgetServiceImpl implements BudgetService {
     public static final int AVG_SALARY = (10000 + 10000 + 10000 + 10000 + 10000 + 10000 + 10000 + 10000 + 15000 + 15000 + 15000 + 20000) / 12;
     public static final double AVG_DAYS = 29.3;
 
-    private static Map<Month, Map<Long, Transaction>> transactions = new TreeMap<>();
+    private static TreeMap<Month, LinkedHashMap<Long, Transaction>> transactions = new TreeMap<>();
+
+    public BudgetServiceImpl(FilesService filesService) {
+        this.filesService = filesService;
+    }
 
     @Override
     public int getDailyBudget() {
@@ -34,9 +44,10 @@ public class BudgetServiceImpl implements BudgetService {
 
     @Override
     public Long addTransaction(Transaction transaction) {
-        Map<Long, Transaction> monthTransactions = transactions.getOrDefault(LocalDate.now().getMonth(), new LinkedHashMap<>());
+        LinkedHashMap<Long, Transaction> monthTransactions = transactions.getOrDefault(LocalDate.now().getMonth(), new LinkedHashMap<>());
         monthTransactions.put(lastId, transaction);
         transactions.put(LocalDate.now().getMonth(), monthTransactions);
+        saveToFile();
         return lastId++;
     }
 
@@ -45,6 +56,7 @@ public class BudgetServiceImpl implements BudgetService {
         for (Map<Long, Transaction> transactionsByMonth : transactions.values()) {
             if (transactionsByMonth.containsKey(id)) {
                 transactionsByMonth.put(id, transaction);
+                saveToFile();
                 return transaction;
             }
         }
@@ -61,6 +73,7 @@ public class BudgetServiceImpl implements BudgetService {
         }
         return false;
     }
+
     @Override
     public void deleteAllTransaction() {
         transactions = new TreeMap<>();
@@ -102,6 +115,26 @@ public class BudgetServiceImpl implements BudgetService {
     public int getSalaryWithVacation(int vacationDaysCount, int vacationWorkingDaysCount, int workingDaysInMonth) {
         int salary = SALARY / workingDaysInMonth * (workingDaysInMonth - vacationDaysCount);
         return salary + getVacationBonus(vacationDaysCount);
+    }
+
+    @Override
+    public void saveToFile() {
+        try {
+            String json = new ObjectMapper().writeValueAsString(transactions);
+            filesService.saveToFile(json);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void readFromFile() {
+        String json = filesService.readFromFile();
+        try {
+            transactions = new ObjectMapper().readValue(json, new TypeReference<TreeMap<Month, LinkedHashMap<Long, Transaction>>>() {
+            });
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
 
