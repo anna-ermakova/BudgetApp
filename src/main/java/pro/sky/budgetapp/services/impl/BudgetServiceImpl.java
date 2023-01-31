@@ -8,6 +8,7 @@ import pro.sky.budgetapp.model.Transaction;
 import pro.sky.budgetapp.services.BudgetService;
 import pro.sky.budgetapp.services.FilesService;
 
+import javax.annotation.PostConstruct;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.LinkedHashMap;
@@ -30,6 +31,11 @@ public class BudgetServiceImpl implements BudgetService {
 
     public BudgetServiceImpl(FilesService filesService) {
         this.filesService = filesService;
+    }
+
+    @PostConstruct
+    private void init() {
+        readFromFile();
     }
 
     @Override
