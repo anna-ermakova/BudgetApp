@@ -133,7 +133,8 @@ public class BudgetServiceImpl implements BudgetService {
         }
     }
 
-    private void readFromFile() {
+    @Override
+    public void readFromFile() {
         String json = filesService.readFromFile();
         try {
             transactions = new ObjectMapper().readValue(json, new TypeReference<TreeMap<Month, LinkedHashMap<Long, Transaction>>>() {
