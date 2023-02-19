@@ -25,4 +25,6 @@ public interface BudgetService {
     int getSalaryWithVacation(int vacationDaysCount, int vacationWorkingDaysCount, int workingDaysInMonth);
 
     void saveToFile();
+
+    void readFromFile();
 }

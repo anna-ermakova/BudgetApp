@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import pro.sky.budgetapp.services.FilesService;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,7 +15,8 @@ public class FilesServiceImpl implements FilesService {
     private String dataFilePath;
     @Value("${name.of.data.file}")
     private String dataFileName;
-@Override
+
+    @Override
     public boolean saveToFile(String json) {
         try {
             cleanDataFile();
@@ -24,17 +26,23 @@ public class FilesServiceImpl implements FilesService {
             return false;
         }
     }
-@Override
+
+    @Override
     public String readFromFile() {
         try {
             return Files.readString(Path.of(dataFilePath, dataFileName));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
     }
-@Override
-public boolean cleanDataFile() {
+
+    @Override
+    public File getDataFile() {
+        return new File(dataFilePath + "/" + dataFileName);
+    }
+
+    @Override
+    public boolean cleanDataFile() {
         try {
             Path path = Path.of(dataFilePath, dataFileName);
             Files.deleteIfExists(path);
