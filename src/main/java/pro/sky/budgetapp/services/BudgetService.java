@@ -2,6 +2,10 @@ package pro.sky.budgetapp.services;
 
 import pro.sky.budgetapp.model.Transaction;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.time.Month;
+
 public interface BudgetService {
 
     int getDailyBudget();// бюджет на день
@@ -23,6 +27,8 @@ public interface BudgetService {
     int getVacationBonus(int daysCount);
 
     int getSalaryWithVacation(int vacationDaysCount, int vacationWorkingDaysCount, int workingDaysInMonth);
+
+    Path createMonthlyReport(Month month) throws IOException;
 
     void saveToFile();
 

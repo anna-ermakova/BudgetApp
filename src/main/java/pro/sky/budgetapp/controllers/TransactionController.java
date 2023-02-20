@@ -9,12 +9,20 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pro.sky.budgetapp.model.Category;
 import pro.sky.budgetapp.model.Transaction;
 import pro.sky.budgetapp.services.BudgetService;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Month;
 
 @RestController
@@ -72,17 +80,37 @@ public class TransactionController {
             @Parameter(name = "month", example = "Декабрь.")
     })
     @ApiResponses(
-            @ApiResponse( responseCode="200", description = "Транзакции были найдены.",
-            content = {
-                    @Content(
-                            mediaType = "application/json",
-                            array=@ArraySchema(
-                                    schema = @Schema(implementation = Transaction.class)
+            @ApiResponse(responseCode = "200", description = "Транзакции были найдены.",
+                    content = {
+                            @Content(
+                                    mediaType = "application/json",
+                                    array = @ArraySchema(
+                                            schema = @Schema(implementation = Transaction.class)
+                                    )
                             )
-                    )
-            })
+                    })
     )
     public ResponseEntity<Transaction> getAllTransactions(@RequestParam(required = false) Month month, @RequestParam(required = false) Category category) {
         return null;
+    }
+
+    @GetMapping("/byMonth/{month}")
+    public ResponseEntity<Object> getTransactionsByMonth(@PathVariable Month month) {
+        try {
+            Path path = budgetService.createMonthlyReport(month);
+            if (Files.size(path) != 0) {
+                return ResponseEntity.noContent().build();
+            }
+            InputStreamResource resource = new InputStreamResource(new FileInputStream(path.toFile()));
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .contentLength(Files.size(path))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment: filename=\"" + month + " -report.txt\"")
+                    .body(resource);
+        } catch (
+                IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(e.toString());
+        }
     }
 }

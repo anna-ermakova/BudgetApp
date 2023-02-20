@@ -9,11 +9,14 @@ import pro.sky.budgetapp.services.BudgetService;
 import pro.sky.budgetapp.services.FilesService;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
 import java.time.Month;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 @Service
 public class BudgetServiceImpl implements BudgetService {
@@ -124,6 +127,19 @@ public class BudgetServiceImpl implements BudgetService {
     }
 
     @Override
+    public Path createMonthlyReport(Month month) throws IOException {
+        LinkedHashMap<Long, Transaction> monthlyTransactions = transactions.getOrDefault(month, new LinkedHashMap<>());
+        Path path = filesService.createTempFile("monthlyReport");
+        for (Transaction transaction : monthlyTransactions.values()) {
+            try (Writer writer = Files.newBufferedWriter(path, StandardOpenOption.APPEND)) {
+                writer.append(transaction.getCategory().getText() + ": " + transaction.getSum() + " руб. -  " + transaction.getComment());
+                writer.append("\n");
+            }
+        }
+        return path;
+    }
+
+    @Override
     public void saveToFile() {
         try {
             String json = new ObjectMapper().writeValueAsString(transactions);
@@ -132,6 +148,7 @@ public class BudgetServiceImpl implements BudgetService {
             throw new RuntimeException(e);
         }
     }
+
 
     @Override
     public void readFromFile() {
