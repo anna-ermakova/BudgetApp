@@ -3,14 +3,24 @@ package pro.sky.budgetapp.services.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import pro.sky.budgetapp.model.Category;
 import pro.sky.budgetapp.model.Transaction;
 import pro.sky.budgetapp.services.BudgetService;
 import pro.sky.budgetapp.services.FilesService;
 
 import javax.annotation.PostConstruct;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -35,7 +45,12 @@ public class BudgetServiceImpl implements BudgetService {
 
     @PostConstruct
     private void init() {
-        readFromFile();
+        try {
+            readFromFile();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Override
@@ -124,23 +139,59 @@ public class BudgetServiceImpl implements BudgetService {
     }
 
     @Override
+    public Path createMonthlyReport(Month month) throws IOException {
+        LinkedHashMap<Long, Transaction> monthlyTransactions = transactions.getOrDefault(month, new LinkedHashMap<>());
+        Path path = filesService.createTempFile("monthlyReport");
+        for (Writer writer = Files.newBufferedWriter(path, StandardOpenOption.APPEND)) {
+            writer.append(transaction.getCategory().getText() + " : " + transaction().getSum() + " руб." + transaction.getComment(
+                    writer.append("\n")
+            ));
+        }
+        return path;
+    }
+
+    @Override
     public void saveToFile() {
         try {
-            String json = new ObjectMapper().writeValueAsString(transactions);
+            DataFile dataFile = new DataFile(lastId+1, transactions);
+            String json = new ObjectMapper().writeValueAsString(dataFile);
             filesService.saveToFile(json);
+            lastId= dataFile.getLastId();
+            transactions = dataFile.getTransactions();
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void readFromFile() {
-        String json = filesService.readFromFile();
+    @Override
+    public void addTransactionsFromInputStream(InputStream inputStream) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] array = StringUtils.split(line, '|');
+                Transaction transaction = new Transaction(Category.valueOf(array[0]), Integer.valueOf(array[1]), array[2]);
+                addTransaction(transaction);
+            }
+        }
+    }
+
+    @Override
+    public void readFromFile() {
         try {
-            transactions = new ObjectMapper().readValue(json, new TypeReference<TreeMap<Month, LinkedHashMap<Long, Transaction>>>() {
+            String json = filesService.readFromFile();
+            DataFile dataFile = new ObjectMapper().readValue(json, new TypeReference<DataFile>() {
             });
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    private static class DataFile {
+        private long lastId;
+        private TreeMap<Month, LinkedHashMap<Long, Transaction>> transactions;
     }
 }
 

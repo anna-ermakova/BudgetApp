@@ -14,6 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import pro.sky.budgetapp.model.Category;
 import pro.sky.budgetapp.model.Transaction;
 import pro.sky.budgetapp.services.BudgetService;
@@ -21,6 +22,7 @@ import pro.sky.budgetapp.services.BudgetService;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Month;
@@ -109,6 +111,17 @@ public class TransactionController {
                     .body(resource);
         } catch (
                 IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(e.toString());
+        }
+    }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Object> addTransactionsFromFile(@RequestParam MultipartFile file) {
+        try (InputStream stream = file.getInputStream()) {
+            budgetService.addTransactionsFromInputStream(stream);
+            return ResponseEntity.ok().build();
+        } catch (IOException e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(e.toString());
         }

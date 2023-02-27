@@ -3,6 +3,7 @@ package pro.sky.budgetapp.services;
 import pro.sky.budgetapp.model.Transaction;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Month;
 
@@ -31,6 +32,8 @@ public interface BudgetService {
     Path createMonthlyReport(Month month) throws IOException;
 
     void saveToFile();
+
+    void addTransactionsFromInputStream(InputStream inputStream) throws IOException;
 
     void readFromFile();
 }
